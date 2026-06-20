@@ -7,15 +7,18 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f8f9fa; --surface: #ffffff; --border: #e5e7eb; --border-light: #f3f4f6;
-    --text-primary: #111827; --text-secondary: #6b7280; --text-muted: #9ca3af;
-    --accent: #1d4ed8; --accent-light: #eff6ff; --green: #16a34a; --green-light: #f0fdf4;
-    --amber: #d97706; --amber-light: #fffbeb; --purple: #7c3aed; --sidebar-w: 224px;
+    --bg: #0d0f14; --surface: #13151c; --surface2: #1a1d26;
+    --border: #1f2232; --border-light: #1a1d26;
+    --text-primary: #e8eaf0; --text-secondary: #8b90a0; --text-muted: #4a4f63;
+    --accent: #2563eb; --accent-light: #1e3a6e;
+    --green: #22c55e; --green-light: #14532d;
+    --amber: #f59e0b; --amber-light: #451a03;
+    --purple: #a78bfa; --sidebar-w: 224px;
   }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-primary); font-size: 13px; line-height: 1.5; display: flex; height: 100vh; overflow: hidden; }
 
   /* SIDEBAR */
-  .sidebar  { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; overflow-y: auto; }
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; overflow-y: auto; }
   .brand { padding: 20px 16px 16px; border-bottom: 1px solid var(--border-light); }
   .brand-logo { width: 32px; height: 32px; background: var(--text-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
   .brand-name { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
@@ -180,7 +183,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
     </div>
     <div class="brand-name">AutoGP Command</div>
-    <div class="brand-sub">Fleet Acquisition Engine</div>
+    <div class="brand-sub">Fleet Acquisition Command</div>
   </div>
 
   <div class="nav-section">
@@ -205,7 +208,7 @@
     <div class="nav-label">System</div>
     <div class="nav-item" onclick="showPage('activity',this)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Engine activity
+      Acquisition activity
     </div>
     <div class="nav-item" onclick="showPage('infra',this)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -232,7 +235,8 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Search fleet targets...
       </div>
-      <button class="btn-primary" onclick="refreshAll()">Refresh intelligence</button>
+      <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#14532d;border:1px solid #166534;border-radius:4px;font-size:10px;font-weight:600;color:#22c55e;text-transform:uppercase;letter-spacing:.06em">Execution mode: Autonomous</span>
+      <button class="btn-primary" onclick="refreshAll()">Run intelligence cycle</button>
     </div>
   </div>
 
@@ -265,18 +269,18 @@
         <div class="intel-grid">
           <div class="intel-card">
             <div class="intel-sector">Security Sector · Gauteng</div>
-            <div class="intel-text">Responding 2.4× faster than logistics targets in the same region.</div>
-            <div class="intel-sub">Avg. reply time: 6.2h vs 14.8h</div>
+            <div class="intel-text">Decision-maker activity increased. Engagement signal detected across 3 priority accounts.</div>
+            <div class="intel-sub">Segment responsiveness above baseline</div>
           </div>
           <div class="intel-card">
-            <div class="intel-sector">Logistics · 50+ Vehicles</div>
-            <div class="intel-text">Highest conversion probability of any segment. 3 of 4 scheduled meetings from this cohort.</div>
+            <div class="intel-sector">Logistics · Durban / KZN</div>
+            <div class="intel-text">Highest conversion probability of any active segment. 3 of 4 scheduled meetings from this cohort.</div>
             <div class="intel-sub">Recommend prioritising Durban pipeline</div>
           </div>
           <div class="intel-card">
             <div class="intel-sector">Construction · Mpumalanga</div>
-            <div class="intel-text">Engagement declining. Open rate dropped from 41% to 22% over 14 days.</div>
-            <div class="intel-sub">Consider revised outreach angle for this segment</div>
+            <div class="intel-text">Segment responsiveness declining. Outreach angle requires adjustment for this region.</div>
+            <div class="intel-sub">Revised messaging cycle recommended</div>
           </div>
         </div>
       </div>
@@ -351,7 +355,7 @@
     <div class="page" id="page-activity">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Live engine activity</div>
+          <div class="card-title">Acquisition activity</div>
           <div class="card-meta"><span class="live-dot"></span> real-time</div>
         </div>
         <div class="activity-log" id="activity-log-full">
@@ -365,7 +369,7 @@
       <div class="infra-grid">
         <div class="infra-card">
           <div class="infra-title">AI systems</div>
-          <div class="infra-row"><span class="infra-name">GPT-4o · scoring + copy generation</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
+          <div class="infra-row"><span class="infra-name">AI scoring + message generation</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
           <div class="infra-row"><span class="infra-name">Fleet enrichment pipeline</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
           <div class="infra-row"><span class="infra-name">Intelligence scoring model</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
           <div class="infra-row"><span class="infra-name">Personalization engine</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
@@ -408,7 +412,7 @@
           </div>
           <div class="config-row">
             <div class="config-cell key">Outreach sequence</div><div class="config-cell val">Day 1 · Day 4 · Day 9</div>
-            <div class="config-cell key">Human approval gate</div><div class="config-cell val">None — fully autonomous</div>
+            <div class="config-cell key">Execution mode</div><div class="config-cell val">Autonomous</div>
           </div>
         </div>
       </div>
@@ -435,7 +439,7 @@ function showPage(id, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   el.classList.add('active');
-  const t = { overview:'Overview', targets:'Fleet targets', meetings:'Account briefings', activity:'Engine activity', infra:'Infrastructure' };
+  const t = { overview:'Overview', targets:'Fleet targets', meetings:'Priority account briefings', activity:'Acquisition activity', infra:'System health' };
   document.getElementById('page-title').textContent = t[id] || id;
   if (id === 'targets') renderTable(allLeads);
   if (id === 'meetings') loadMeetings();
@@ -492,10 +496,10 @@ function renderMetrics(leads, meetings) {
   const hp = leads.filter(l => (l.score||0) >= 70).length;
   const active = leads.filter(l => l.stage === 'Active' || l.stage === 'Scheduled').length;
   document.getElementById('metrics-grid').innerHTML = `
-    <div class="metric-card"><div class="metric-label">Active Opportunities</div><div class="metric-value">${leads.length}</div><div class="metric-sub up">↑ ${todayN} identified today</div></div>
-    <div class="metric-card"><div class="metric-label">Target Fleet Capacity</div><div class="metric-value">${(leads.length*28).toLocaleString()}</div><div class="metric-sub">Vehicles across active targets</div></div>
+    <div class="metric-card"><div class="metric-label">Active Fleet Opportunities</div><div class="metric-value">${leads.length}</div><div class="metric-sub up">↑ ${todayN} identified today</div></div>
+    <div class="metric-card"><div class="metric-label">Estimated Vehicles in Pipeline</div><div class="metric-value">${(leads.length*28).toLocaleString()}</div><div class="metric-sub">Vehicles across active targets</div></div>
     <div class="metric-card"><div class="metric-label">High Priority Accounts</div><div class="metric-value accent">${hp}</div><div class="metric-sub">Score ≥ 70 · not yet scheduled</div></div>
-    <div class="metric-card"><div class="metric-label">Active Engagements</div><div class="metric-value green">${active}</div><div class="metric-sub">In outreach or scheduled</div></div>`;
+    <div class="metric-card"><div class="metric-label">Active Decision-Maker Signals</div><div class="metric-value green">${active}</div><div class="metric-sub">In outreach or scheduled</div></div>`;
 }
 
 function renderPipeline(leads) {
