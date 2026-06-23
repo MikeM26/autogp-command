@@ -5,635 +5,543 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoGP Command</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0d0f14; --surface: #13151c; --surface2: #1a1d26;
-    --border: #1f2232; --border-light: #1a1d26;
-    --text-primary: #e8eaf0; --text-secondary: #8b90a0; --text-muted: #4a4f63;
-    --accent: #2563eb; --accent-light: #1e3a6e;
-    --green: #22c55e; --green-light: #14532d;
-    --amber: #f59e0b; --amber-light: #451a03;
-    --purple: #a78bfa; --sidebar-w: 224px;
-  }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-primary); font-size: 13px; line-height: 1.5; display: flex; height: 100vh; overflow: hidden; }
-
-  /* SIDEBAR */
-  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; overflow-y: auto; }
-  .brand { padding: 20px 16px 16px; border-bottom: 1px solid var(--border-light); }
-  .brand-logo { width: 32px; height: 32px; background: var(--text-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
-  .brand-name { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
-  .brand-sub { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
-  .nav-section { padding: 12px 8px 4px; }
-  .nav-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 8px; margin-bottom: 4px; }
-  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); font-weight: 500; font-size: 13px; transition: all 0.1s; }
-  .nav-item:hover { background: var(--bg); color: var(--text-primary); }
-  .nav-item.active { background: var(--accent-light); color: var(--accent); }
-  .nav-badge { margin-left: auto; background: var(--accent); color: white; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
-  .engine-status { margin: auto 0 0; padding: 12px; border-top: 1px solid var(--border-light); }
-  .status-pill { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--green-light); border-radius: 8px; border: 1px solid #bbf7d0; }
-  .status-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; flex-shrink: 0; }
-  .status-text { font-size: 11px; font-weight: 600; color: var(--green); }
-  .status-sub { font-size: 10px; color: #4ade80; margin-top: 1px; }
-
-  /* MAIN */
-  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
-  .page-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-  .topbar-right { display: flex; align-items: center; gap: 10px; }
-  .search-box { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; color: var(--text-muted); font-size: 12px; width: 200px; }
-  .btn-primary { background: var(--text-primary); color: white; border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
-  .btn-primary:hover { opacity: 0.85; }
-  .content { padding: 24px; flex: 1; }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* CARDS */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; }
-  .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-  .card-meta { font-size: 11px; color: var(--text-muted); }
-
-  /* REGIONS */
-  .region-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .region-card { padding: 20px; border-right: 1px solid var(--border-light); }
-  .region-card:last-child { border-right: none; }
-  .region-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .region-count { font-size: 36px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
-  .region-vehicles { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
-  .region-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
-  .region-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
-  .fill-blue { background: var(--accent); } .fill-purple { background: var(--purple); } .fill-green { background: var(--green); }
-  .region-stats { display: flex; justify-content: space-between; }
-  .region-stat { font-size: 11px; color: var(--text-muted); }
-  .region-stat span { font-weight: 600; color: var(--text-secondary); }
-
-  /* METRICS */
-  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
-  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
-  .metric-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .metric-value { font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; line-height: 1; }
-  .metric-value.accent { color: var(--accent); } .metric-value.green { color: var(--green); }
-  .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-  .metric-sub.up { color: var(--green); }
-
-  /* INTEL */
-  .intel-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .intel-card { padding: 18px 20px; border-right: 1px solid var(--border-light); }
-  .intel-card:last-child { border-right: none; }
-  .intel-sector { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .intel-text { font-size: 12px; color: var(--text-primary); font-weight: 500; line-height: 1.5; margin-bottom: 6px; }
-  .intel-sub { font-size: 11px; color: var(--text-muted); }
-
-  /* TWO COL */
-  .two-col { display: grid; grid-template-columns: 1fr 320px; gap: 12px; margin-top: 12px; }
-
-  /* PIPELINE */
-  .pipeline-stages { display: flex; padding: 20px; gap: 0; }
-  .stage { flex: 1; padding-right: 20px; border-right: 1px solid var(--border-light); margin-right: 20px; }
-  .stage:last-child { border-right: none; margin-right: 0; padding-right: 0; }
-  .stage-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-  .stage-count { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.03em; margin-bottom: 8px; }
-
-  /* PRIORITY */
-  .priority-list { padding: 4px 0; }
-  .priority-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border-light); }
-  .priority-item:last-child { border-bottom: none; }
-  .priority-rank { font-size: 11px; color: var(--text-muted); font-weight: 500; width: 16px; flex-shrink: 0; }
-  .priority-info { flex: 1; min-width: 0; }
-  .priority-name { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .priority-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-  .priority-score { font-size: 12px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0; }
-
-  /* ACTIVITY */
-  .activity-log { padding: 4px 0; }
-  .activity-item { display: flex; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--border-light); align-items: flex-start; }
-  .activity-item:last-child { border-bottom: none; }
-  .activity-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-  .dot-blue { background: var(--accent); } .dot-green { background: var(--green); } .dot-amber { background: var(--amber); } .dot-purple { background: var(--purple); }
-  .activity-text { font-size: 12px; color: var(--text-secondary); flex: 1; }
-  .activity-text strong { color: var(--text-primary); font-weight: 500; }
-  .activity-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
-
-  /* TABLE */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg); white-space: nowrap; }
-  td { padding: 11px 16px; font-size: 12px; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg); }
-  .td-company { font-weight: 500; color: var(--text-primary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .stage-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; }
-  .badge-identified { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
-  .badge-enriched { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-  .badge-qualified { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
-  .badge-active { background: var(--amber-light); color: var(--amber); border: 1px solid #fde68a; }
-  .badge-scheduled { background: var(--green-light); color: var(--green); border: 1px solid #bbf7d0; }
-
-  /* MEETINGS */
-  .meetings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
-  .meeting-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: var(--bg); }
-  .meeting-company { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-  .meeting-contact { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
-  .meeting-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-  .field-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-  .field-value { font-size: 11px; color: var(--text-secondary); margin-top: 2px; font-weight: 500; }
-  .meeting-notes { font-size: 11px; color: var(--text-secondary); line-height: 1.5; padding-top: 10px; border-top: 1px solid var(--border-light); }
-
-  /* INFRA */
-  .infra-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
-  .infra-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-  .infra-title { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
-  .infra-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 12px; }
-  .infra-row:last-child { border-bottom: none; }
-  .infra-name { color: var(--text-secondary); }
-  .infra-status { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; }
-  .infra-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-  .infra-status.green { color: var(--green); } .infra-status.green .infra-dot { background: var(--green); }
-  .infra-status.amber { color: var(--amber); } .infra-status.amber .infra-dot { background: var(--amber); }
-  .infra-status.blue { color: var(--accent); } .infra-status.blue .infra-dot { background: var(--accent); }
-  .config-block { margin: 0 16px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .config-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; border-bottom: 1px solid var(--border-light); }
-  .config-row:last-child { border-bottom: none; }
-  .config-cell { padding: 10px 14px; color: var(--text-muted); font-size: 11px; border-right: 1px solid var(--border-light); }
-  .config-cell:last-child { border-right: none; }
-  .config-cell.key { font-weight: 500; color: var(--text-secondary); }
-  .config-cell.val { font-weight: 600; color: var(--text-primary); }
-
-  /* FILTERS */
-  .filter-bar { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); align-items: center; }
-  .filter-input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text-primary); background: var(--bg); outline: none; }
-  .filter-input:focus { border-color: var(--accent); }
-  .filter-select { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--text-secondary); background: var(--surface); outline: none; cursor: pointer; }
-
-  /* UTILS */
-  .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted); font-size: 12px; gap: 8px; }
-  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .empty { padding: 40px; text-align: center; color: var(--text-muted); font-size: 12px; }
-  .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-  .section-gap { margin-top: 12px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0a0b;--surface:#111113;--s2:#17171a;--s3:#1d1d21;
+--border:#242428;--bl:#1a1a1d;
+--tp:#f2f2f3;--ts:#9a9aa0;--tm:#5a5a61;--td:#3a3a40;
+--sw:228px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--tp);font-size:13px;line-height:1.5;display:flex;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+.sidebar{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow-y:auto}
+.brand{padding:20px 16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
+.brand-logo{width:34px;height:34px;background:var(--s3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-logo svg{color:var(--tp)}
+.brand-text{min-width:0}
+.brand-name{font-size:13px;font-weight:600;color:var(--tp);letter-spacing:-.02em;line-height:1.2}
+.brand-sub{font-size:9.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.nav-section{padding:16px 10px 4px}
+.nav-label{font-size:9.5px;font-weight:600;color:var(--td);text-transform:uppercase;letter-spacing:.1em;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px;border-radius:6px;cursor:pointer;color:var(--ts);font-weight:500;font-size:12.5px;transition:background .12s,color .12s;user-select:none}
+.nav-item:hover{background:var(--s2);color:var(--tp)}
+.nav-item.active{background:var(--s3);color:var(--tp)}
+.nav-item svg{flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--s3);border:1px solid var(--border);color:var(--ts);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;min-width:20px;text-align:center}
+.nav-item.active .nav-badge{background:var(--tp);color:var(--bg);border-color:var(--tp)}
+.engine-status{margin:auto 0 0;padding:12px}
+.status-pill{display:flex;align-items:center;gap:9px;padding:11px 12px;background:var(--s2);border-radius:8px;border:1px solid var(--border)}
+.status-dot{width:6px;height:6px;background:var(--tp);border-radius:50%;flex-shrink:0;animation:pulse 2.4s infinite}
+.status-text{font-size:11px;font-weight:600;color:var(--tp)}
+.status-sub{font-size:10px;color:var(--tm);margin-top:2px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 26px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10}
+.page-title{font-size:13px;font-weight:600;color:var(--tp);letter-spacing:-.02em}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.search-box{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 11px;color:var(--tm);font-size:12px;width:200px;transition:border-color .12s}
+.search-box:focus-within{border-color:var(--td)}
+.search-box input{background:none;border:none;outline:none;color:var(--tp);font-size:12px;width:100%;font-family:inherit}
+.search-box input::placeholder{color:var(--tm)}
+.exec-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:var(--s2);border:1px solid var(--border);border-radius:7px;font-size:10.5px;font-weight:600;color:var(--ts);letter-spacing:.02em;white-space:nowrap}
+.exec-badge .dot{width:5px;height:5px;background:var(--tp);border-radius:50%;animation:pulse 2.4s infinite}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--tp);color:var(--bg);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .12s;font-family:inherit;white-space:nowrap}
+.btn:hover{opacity:.88}
+.btn svg{flex-shrink:0}
+.btn.spinning svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.content{padding:22px 26px;flex:1}
+.page{display:none}
+.page.active{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:30px 34px;margin-bottom:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:30px}
+.hero-num{font-size:66px;font-weight:700;color:var(--tp);letter-spacing:-.045em;line-height:.9}
+.hero-label{font-size:10.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.hero-sub{font-size:12px;color:var(--ts);margin-top:10px}
+.hero-right{display:flex;gap:34px;text-align:right}
+.hstat-val{font-size:24px;font-weight:700;color:var(--tp);letter-spacing:-.03em;line-height:1}
+.hstat-label{font-size:9.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.07em;margin-top:6px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-header{padding:15px 19px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12px;font-weight:600;color:var(--tp);letter-spacing:-.01em}
+.card-meta{font-size:11px;color:var(--tm);display:flex;align-items:center;gap:6px}
+.region-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.region-card{padding:19px 21px;border-right:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
+.region-card:last-child{border-right:none}
+.region-card:hover{background:var(--s2)}
+.region-card::after{content:'↗';position:absolute;top:16px;right:18px;font-size:13px;color:var(--td);opacity:0;transition:opacity .12s}
+.region-card:hover::after{opacity:1}
+.region-label{font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
+.region-count{font-size:34px;font-weight:700;color:var(--tp);letter-spacing:-.035em;line-height:1;margin-bottom:5px}
+.region-vehicles{font-size:11px;color:var(--ts);margin-bottom:12px}
+.region-bar{height:2px;background:var(--border);border-radius:2px;margin-bottom:11px;overflow:hidden}
+.region-fill{height:100%;background:var(--tp);border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.region-stats{display:flex;justify-content:space-between}
+.region-stat{font-size:11px;color:var(--tm)}
+.region-stat span{font-weight:600;color:var(--ts)}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:17px 19px;cursor:pointer;transition:background .12s,border-color .12s;position:relative}
+.metric-card:hover{background:var(--s2);border-color:var(--td)}
+.metric-card::after{content:'↗';position:absolute;top:15px;right:17px;font-size:12px;color:var(--td);opacity:0;transition:opacity .12s}
+.metric-card:hover::after{opacity:1}
+.metric-label{font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.09em;margin-bottom:9px}
+.metric-value{font-size:27px;font-weight:700;color:var(--tp);letter-spacing:-.035em;line-height:1}
+.metric-sub{font-size:11px;color:var(--tm);margin-top:6px}
+.intel-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.intel-card{padding:17px 19px;border-right:1px solid var(--border)}
+.intel-card:last-child{border-right:none}
+.intel-sector{font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.09em;margin-bottom:9px}
+.intel-text{font-size:12px;color:var(--tp);font-weight:500;line-height:1.55;margin-bottom:6px}
+.intel-sub{font-size:11px;color:var(--tm)}
+.two-col{display:grid;grid-template-columns:1fr 310px;gap:12px;margin-top:12px}
+.pipeline-stages{display:flex;padding:19px 21px}
+.stage{flex:1;padding-right:19px;border-right:1px solid var(--border);margin-right:19px;cursor:pointer;transition:opacity .12s}
+.stage:last-child{border-right:none;margin-right:0;padding-right:0}
+.stage:hover{opacity:.7}
+.stage-label{font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.09em;margin-bottom:7px}
+.stage-count{font-size:25px;font-weight:700;color:var(--tp);letter-spacing:-.035em;margin-bottom:9px}
+.stage-bar{height:2px;border-radius:2px;background:var(--border);overflow:hidden}
+.stage-bar div{height:100%;background:var(--tp);border-radius:2px;transition:width .6s ease}
+.priority-list{padding:4px 0}
+.priority-item{display:flex;align-items:center;gap:11px;padding:10px 17px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.priority-item:last-child{border-bottom:none}
+.priority-item:hover{background:var(--s2)}
+.priority-rank{font-size:11px;color:var(--td);font-weight:600;width:14px;flex-shrink:0}
+.priority-info{flex:1;min-width:0}
+.priority-name{font-size:12px;font-weight:500;color:var(--tp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.priority-meta{font-size:11px;color:var(--tm);margin-top:1px}
+.priority-score{font-size:12px;font-weight:700;color:var(--ts);flex-shrink:0}
+.activity-log{padding:4px 0}
+.activity-item{display:flex;gap:11px;padding:9px 17px;border-bottom:1px solid var(--border);align-items:flex-start}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:5px;height:5px;border-radius:50%;margin-top:6px;flex-shrink:0;background:var(--ts)}
+.activity-dot.dim{background:var(--td)}
+.activity-text{font-size:12px;color:var(--ts);flex:1}
+.activity-text strong{color:var(--tp);font-weight:500}
+.activity-time{font-size:11px;color:var(--tm);flex-shrink:0}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.09em;padding:11px 17px;border-bottom:1px solid var(--border);background:var(--s2);white-space:nowrap}
+td{padding:11px 17px;font-size:12px;color:var(--ts);border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer;transition:background .1s}
+tbody tr:hover td{background:var(--s2)}
+.tdc{font-weight:500;color:var(--tp);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;padding:2px 9px;border-radius:5px;font-size:10px;font-weight:600;white-space:nowrap;letter-spacing:.02em;background:var(--s3);color:var(--ts);border:1px solid var(--border)}
+.badge.solid{background:var(--tp);color:var(--bg);border-color:var(--tp)}
+.meetings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:17px}
+.meeting-card{border:1px solid var(--border);border-radius:10px;padding:19px;background:var(--s2)}
+.meeting-company{font-size:14px;font-weight:600;color:var(--tp);margin-bottom:3px;letter-spacing:-.01em}
+.meeting-contact{font-size:11px;color:var(--tm);margin-bottom:15px}
+.meeting-fields{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px}
+.fl{font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.06em}
+.fv{font-size:12px;color:var(--ts);margin-top:3px;font-weight:500}
+.mdiv{height:1px;background:var(--border);margin:11px 0}
+.msl{font-size:9.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.ma{font-size:12px;color:var(--ts);line-height:1.55}
+.mn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:var(--tp);font-weight:500}
+.health-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:17px}
+.health-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:17px}
+.health-title{font-size:10px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.09em;margin-bottom:13px}
+.health-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.health-row:last-child{border-bottom:none}
+.health-name{color:var(--ts)}
+.hs{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--tp)}
+.hs.dim{color:var(--tm)}
+.hd{width:5px;height:5px;border-radius:50%;background:var(--tp)}
+.hs.dim .hd{background:var(--td)}
+.config-block{margin:0 17px 17px;background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.config-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.config-row:last-child{border-bottom:none}
+.config-cell{padding:11px 15px;font-size:11px;border-right:1px solid var(--border)}
+.config-cell:last-child{border-right:none}
+.config-cell.k{color:var(--tm);font-weight:500}
+.config-cell.v{color:var(--tp);font-weight:600}
+.filter-bar{display:flex;gap:9px;padding:13px 17px;border-bottom:1px solid var(--border);align-items:center}
+.filter-input{flex:1;border:1px solid var(--border);border-radius:7px;padding:7px 11px;font-size:12px;color:var(--tp);background:var(--bg);outline:none;font-family:inherit;transition:border-color .12s}
+.filter-input:focus{border-color:var(--td)}
+.filter-select{border:1px solid var(--border);border-radius:7px;padding:7px 11px;font-size:12px;color:var(--ts);background:var(--surface);outline:none;cursor:pointer;font-family:inherit}
+.loading{display:flex;align-items:center;justify-content:center;padding:44px;color:var(--tm);font-size:12px;gap:9px}
+.spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--ts);border-radius:50%;animation:spin .7s linear infinite}
+.empty{padding:44px;text-align:center;color:var(--tm);font-size:12px}
+.ld{width:5px;height:5px;background:var(--tp);border-radius:50%;display:inline-block;animation:pulse 2.4s infinite}
+.gap{margin-top:12px}
 </style>
 </head>
 <body>
-
 <aside class="sidebar">
-  <div class="brand">
-    <div class="brand-logo">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-    </div>
-    <div class="brand-name">AutoGP Command</div>
-    <div class="brand-sub">Fleet Acquisition Command</div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-label">Intelligence</div>
-    <div class="nav-item active" onclick="showPage('overview',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      Overview
-    </div>
-    <div class="nav-item" onclick="showPage('targets',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-      Fleet targets
-      <span class="nav-badge" id="nav-badge-count">—</span>
-    </div>
-    <div class="nav-item" onclick="showPage('meetings',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Account briefings
-      <span class="nav-badge" id="nav-badge-meetings" style="background:#16a34a">—</span>
-    </div>
-  </div>
-
-  <div class="nav-section">
-    <div class="nav-label">System</div>
-    <div class="nav-item" onclick="showPage('activity',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Acquisition activity
-    </div>
-    <div class="nav-item" onclick="showPage('infra',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      Infrastructure
-    </div>
-  </div>
-
-  <div class="engine-status">
-    <div class="status-pill">
-      <div class="status-dot"></div>
-      <div>
-        <div class="status-text">Engine autonomous</div>
-        <div class="status-sub" id="next-cycle">Syncing...</div>
-      </div>
-    </div>
-  </div>
+<div class="brand">
+<div class="brand-logo">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h2M19 17h2"/><rect x="2" y="9" width="13" height="8" rx="1.5"/><path d="M15 11h3.5l2.5 3v3H15z"/><circle cx="6" cy="17" r="2" fill="var(--surface)"/><circle cx="17" cy="17" r="2" fill="var(--surface)"/></svg>
+</div>
+<div class="brand-text">
+<div class="brand-name">AutoGP Command</div>
+<div class="brand-sub">Fleet Acquisition</div>
+</div>
+</div>
+<div class="nav-section">
+<div class="nav-label">Intelligence</div>
+<div class="nav-item active" onclick="showPage('overview',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Overview</div>
+<div class="nav-item" onclick="showPage('targets',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>Fleet targets<span class="nav-badge" id="nbc">—</span></div>
+<div class="nav-item" onclick="showPage('meetings',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Account briefings<span class="nav-badge" id="nbm">—</span></div>
+</div>
+<div class="nav-section">
+<div class="nav-label">System</div>
+<div class="nav-item" onclick="showPage('activity',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Acquisition activity</div>
+<div class="nav-item" onclick="showPage('health',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>System health</div>
+</div>
+<div class="engine-status">
+<div class="status-pill">
+<div class="status-dot"></div>
+<div><div class="status-text">Engine running</div><div class="status-sub" id="nc">Calculating...</div></div>
+</div>
+</div>
 </aside>
 
 <div class="main">
-  <div class="topbar">
-    <div class="page-title" id="page-title">Overview</div>
-    <div class="topbar-right">
-      <div class="search-box">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Search fleet targets...
-      </div>
-      <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#14532d;border:1px solid #166534;border-radius:4px;font-size:10px;font-weight:600;color:#22c55e;text-transform:uppercase;letter-spacing:.06em">Execution mode: Autonomous</span>
-      <button class="btn-primary" onclick="refreshAll()">Run intelligence cycle</button>
-    </div>
-  </div>
+<div class="topbar">
+<div class="page-title" id="pt">Overview</div>
+<div class="topbar-right">
+<div class="search-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input id="topSearch" placeholder="Search fleet targets..." onkeydown="if(event.key==='Enter')jumpSearch()"></div>
+<span class="exec-badge"><span class="dot"></span>Execution mode: Autonomous</span>
+<button class="btn" id="cycleBtn" onclick="runCycle()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Run intelligence cycle</button>
+</div>
+</div>
 
-  <div class="content">
+<div class="content">
 
-    <!-- OVERVIEW -->
-    <div class="page active" id="page-overview">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Regional fleet opportunity</div>
-          <div class="card-meta">Mid-market commercial fleets · 10–100 vehicles · <span class="live-dot"></span> updated continuously</div>
-        </div>
-        <div class="region-grid" id="region-grid">
-          <div class="loading" style="grid-column:1/-1"><div class="spinner"></div> Loading...</div>
-        </div>
-      </div>
+<div class="page active" id="page-overview">
+<div class="hero">
+<div>
+<div class="hero-label">Estimated vehicles in pipeline</div>
+<div class="hero-num" id="hn">—</div>
+<div class="hero-sub" id="hsub">Loading fleet intelligence...</div>
+</div>
+<div class="hero-right">
+<div><div class="hstat-val" id="ha">—</div><div class="hstat-label">Active fleet<br>opportunities</div></div>
+<div><div class="hstat-val" id="hp">—</div><div class="hstat-label">High priority<br>accounts</div></div>
+<div><div class="hstat-val" id="hsi">—</div><div class="hstat-label">Active<br>signals</div></div>
+</div>
+</div>
 
-      <div class="metrics-grid" id="metrics-grid">
-        <div class="metric-card"><div class="loading"><div class="spinner"></div></div></div>
-        <div class="metric-card"><div class="loading"><div class="spinner"></div></div></div>
-        <div class="metric-card"><div class="loading"><div class="spinner"></div></div></div>
-        <div class="metric-card"><div class="loading"><div class="spinner"></div></div></div>
-      </div>
+<div class="card" style="margin-bottom:14px">
+<div class="card-header"><div class="card-title">Regional fleet opportunity</div><div class="card-meta">Mid-market commercial · 10–100 vehicles<span class="ld"></span></div></div>
+<div class="region-grid" id="rg"><div class="loading" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+</div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Intelligence observations</div>
-          <div class="card-meta">AI · updated hourly</div>
-        </div>
-        <div class="intel-grid">
-          <div class="intel-card">
-            <div class="intel-sector">Security Sector · Gauteng</div>
-            <div class="intel-text">Decision-maker activity increased. Engagement signal detected across 3 priority accounts.</div>
-            <div class="intel-sub">Segment responsiveness above baseline</div>
-          </div>
-          <div class="intel-card">
-            <div class="intel-sector">Logistics · Durban / KZN</div>
-            <div class="intel-text">Highest conversion probability of any active segment. 3 of 4 scheduled meetings from this cohort.</div>
-            <div class="intel-sub">Recommend prioritising Durban pipeline</div>
-          </div>
-          <div class="intel-card">
-            <div class="intel-sector">Construction · Mpumalanga</div>
-            <div class="intel-text">Segment responsiveness declining. Outreach angle requires adjustment for this region.</div>
-            <div class="intel-sub">Revised messaging cycle recommended</div>
-          </div>
-        </div>
-      </div>
+<div class="card" style="margin-bottom:14px">
+<div class="card-header"><div class="card-title">Intelligence observations</div><div class="card-meta">Segment analysis · continuous</div></div>
+<div class="intel-grid">
+<div class="intel-card"><div class="intel-sector">Security · Gauteng</div><div class="intel-text">Decision-maker activity increased. Engagement signal detected across priority accounts.</div><div class="intel-sub">Segment responsiveness above baseline</div></div>
+<div class="intel-card"><div class="intel-sector">Logistics · Durban / KZN</div><div class="intel-text">Highest conversion probability of any active segment in current pipeline.</div><div class="intel-sub">Recommend prioritising Durban pipeline</div></div>
+<div class="intel-card"><div class="intel-sector">Construction · Mpumalanga</div><div class="intel-text">Segment responsiveness declining. Outreach angle requires adjustment.</div><div class="intel-sub">Revised messaging cycle recommended</div></div>
+</div>
+</div>
 
-      <div class="two-col section-gap">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Acquisition pipeline</div>
-            <div class="card-meta" id="pipeline-total">—</div>
-          </div>
-          <div class="pipeline-stages" id="pipeline-stages">
-            <div class="loading"><div class="spinner"></div></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Top priority accounts</div>
-            <div class="card-meta">By intelligence score</div>
-          </div>
-          <div class="priority-list" id="priority-list">
-            <div class="loading"><div class="spinner"></div></div>
-          </div>
-        </div>
-      </div>
+<div class="two-col">
+<div class="card">
+<div class="card-header"><div class="card-title">Acquisition pipeline</div><div class="card-meta" id="ptot">—</div></div>
+<div class="pipeline-stages" id="ps"><div class="loading"><div class="spinner"></div></div></div>
+</div>
+<div class="card">
+<div class="card-header"><div class="card-title">Top priority accounts</div><div class="card-meta">By score</div></div>
+<div class="priority-list" id="pl"><div class="loading"><div class="spinner"></div></div></div>
+</div>
+</div>
 
-      <div class="card section-gap">
-        <div class="card-header">
-          <div class="card-title">Engine activity</div>
-          <div class="card-meta" id="activity-time">—</div>
-        </div>
-        <div class="activity-log" id="activity-log-overview">
-          <div class="loading"><div class="spinner"></div></div>
-        </div>
-      </div>
-    </div>
+<div class="card gap">
+<div class="card-header"><div class="card-title">Acquisition activity</div><div class="card-meta" id="at">—</div></div>
+<div class="activity-log" id="alo"><div class="loading"><div class="spinner"></div></div></div>
+</div>
+</div>
 
-    <!-- FLEET TARGETS -->
-    <div class="page" id="page-targets">
-      <div class="card">
-        <div class="filter-bar">
-          <input class="filter-input" id="search-input" placeholder="Search company or contact..." oninput="filterTable()">
-          <select class="filter-select" id="filter-stage" onchange="filterTable()">
-            <option value="">All stages</option>
-            <option>Identified</option><option>Enriched</option><option>Qualified</option><option>Active</option><option>Scheduled</option>
-          </select>
-          <select class="filter-select" id="filter-region" onchange="filterTable()">
-            <option value="">All regions</option>
-            <option>Gauteng</option><option>Durban</option><option>Mpumalanga</option>
-          </select>
-          <select class="filter-select" id="filter-sector" onchange="filterTable()">
-            <option value="">All sectors</option>
-            <option>Transport</option><option>Logistics</option><option>Security</option><option>Construction</option>
-          </select>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Company</th><th>Decision maker</th><th>Sector</th><th>Region</th><th>Est. fleet</th><th>Score</th><th>Stage</th><th>Last activity</th></tr></thead>
-            <tbody id="leads-tbody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div> Loading fleet targets...</div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+<div class="page" id="page-targets">
+<div class="card">
+<div class="filter-bar">
+<input class="filter-input" id="si" placeholder="Search company..." oninput="filterTable()">
+<select class="filter-select" id="fs" onchange="filterTable()"><option value="">All stages</option><option>Identified</option><option>Enriched</option><option>Qualified</option><option>Active</option><option>Scheduled</option></select>
+<select class="filter-select" id="fr" onchange="filterTable()"><option value="">All regions</option><option>Gauteng</option><option>Durban</option><option>Mpumalanga</option></select>
+<select class="filter-select" id="fse" onchange="filterTable()"><option value="">All sectors</option><option>Transport</option><option>Logistics</option><option>Security</option><option>Construction</option></select>
+</div>
+<div class="table-wrap">
+<table><thead><tr><th>Company</th><th>Decision maker</th><th>Sector</th><th>Region</th><th>Est. fleet</th><th>Score</th><th>Stage</th><th>Last activity</th></tr></thead>
+<tbody id="tb"><tr><td colspan="8"><div class="loading"><div class="spinner"></div></div></td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
 
-    <!-- MEETINGS -->
-    <div class="page" id="page-meetings">
-      <div class="meetings-grid" id="meetings-grid">
-        <div class="loading" style="grid-column:1/-1"><div class="spinner"></div> Loading account briefings...</div>
-      </div>
-    </div>
+<div class="page" id="page-meetings">
+<div class="meetings-grid" id="mg"><div class="loading" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+</div>
 
-    <!-- ACTIVITY -->
-    <div class="page" id="page-activity">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Acquisition activity</div>
-          <div class="card-meta"><span class="live-dot"></span> real-time</div>
-        </div>
-        <div class="activity-log" id="activity-log-full">
-          <div class="loading"><div class="spinner"></div></div>
-        </div>
-      </div>
-    </div>
+<div class="page" id="page-activity">
+<div class="card">
+<div class="card-header"><div class="card-title">Acquisition activity</div><div class="card-meta"><span class="ld"></span> real-time</div></div>
+<div class="activity-log" id="alf"><div class="loading"><div class="spinner"></div></div></div>
+</div>
+</div>
 
-    <!-- INFRASTRUCTURE -->
-    <div class="page" id="page-infra">
-      <div class="infra-grid">
-        <div class="infra-card">
-          <div class="infra-title">AI systems</div>
-          <div class="infra-row"><span class="infra-name">AI scoring + message generation</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
-          <div class="infra-row"><span class="infra-name">Fleet enrichment pipeline</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
-          <div class="infra-row"><span class="infra-name">Intelligence scoring model</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
-          <div class="infra-row"><span class="infra-name">Personalization engine</span><span class="infra-status green"><span class="infra-dot"></span>Operational</span></div>
-        </div>
-        <div class="infra-card">
-          <div class="infra-title">Active workflows</div>
-          <div class="infra-row"><span class="infra-name">Discovery → enrich → score</span><span class="infra-status green"><span class="infra-dot"></span>Running</span></div>
-          <div class="infra-row"><span class="infra-name">Outreach sequence · D1 · D4 · D9</span><span class="infra-status green"><span class="infra-dot"></span>Running</span></div>
-          <div class="infra-row"><span class="infra-name">Calendly webhook receiver</span><span class="infra-status green"><span class="infra-dot"></span>Running</span></div>
-          <div class="infra-row"><span class="infra-name">Calendar sync</span><span class="infra-status green"><span class="infra-dot"></span>Running</span></div>
-        </div>
-        <div class="infra-card">
-          <div class="infra-title">Data infrastructure</div>
-          <div class="infra-row"><span class="infra-name">Supabase</span><span class="infra-status green"><span class="infra-dot"></span>Connected</span></div>
-          <div class="infra-row"><span class="infra-name">Brevo · email delivery</span><span class="infra-status green"><span class="infra-dot"></span>Connected</span></div>
-          <div class="infra-row"><span class="infra-name">Calendly</span><span class="infra-status green"><span class="infra-dot"></span>Connected</span></div>
-          <div class="infra-row"><span class="infra-name">n8n orchestration</span><span class="infra-status blue"><span class="infra-dot"></span>Running</span></div>
-          <div class="infra-row"><span class="infra-name">GitHub</span><span class="infra-status green"><span class="infra-dot"></span>Connected</span></div>
-        </div>
-        <div class="infra-card">
-          <div class="infra-title">Module status</div>
-          <div class="infra-row"><span class="infra-name">Fleet discovery</span><span class="infra-status green"><span class="infra-dot"></span>Active</span></div>
-          <div class="infra-row"><span class="infra-name">AI enrichment + scoring</span><span class="infra-status green"><span class="infra-dot"></span>Active</span></div>
-          <div class="infra-row"><span class="infra-name">Outreach engine</span><span class="infra-status green"><span class="infra-dot"></span>Active</span></div>
-          <div class="infra-row"><span class="infra-name">Booking automation</span><span class="infra-status green"><span class="infra-dot"></span>Active</span></div>
-          <div class="infra-row"><span class="infra-name">WhatsApp outreach</span><span class="infra-status amber"><span class="infra-dot"></span>In development</span></div>
-          <div class="infra-row"><span class="infra-name">Voice AI · SDR agent</span><span class="infra-status amber"><span class="infra-dot"></span>In development</span></div>
-        </div>
-      </div>
-      <div class="card" style="margin:0 0 12px">
-        <div class="card-header"><div class="card-title">Engine configuration</div></div>
-        <div class="config-block">
-          <div class="config-row">
-            <div class="config-cell key">Target market</div><div class="config-cell val">Mid-market commercial fleets</div>
-            <div class="config-cell key">Fleet size range</div><div class="config-cell val">10–100 vehicles</div>
-          </div>
-          <div class="config-row">
-            <div class="config-cell key">Active regions</div><div class="config-cell val">Gauteng · Durban · Mpumalanga</div>
-            <div class="config-cell key">Discovery interval</div><div class="config-cell val">Every 5 minutes</div>
-          </div>
-          <div class="config-row">
-            <div class="config-cell key">Outreach sequence</div><div class="config-cell val">Day 1 · Day 4 · Day 9</div>
-            <div class="config-cell key">Execution mode</div><div class="config-cell val">Autonomous</div>
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="page" id="page-health">
+<div class="health-grid">
+<div class="health-card"><div class="health-title">AI systems</div>
+<div class="health-row"><span class="health-name">AI scoring + message generation</span><span class="hs"><span class="hd"></span>Operational</span></div>
+<div class="health-row"><span class="health-name">Fleet enrichment pipeline</span><span class="hs"><span class="hd"></span>Operational</span></div>
+<div class="health-row"><span class="health-name">Intelligence scoring model</span><span class="hs"><span class="hd"></span>Operational</span></div>
+<div class="health-row"><span class="health-name">Personalization engine</span><span class="hs"><span class="hd"></span>Operational</span></div>
+</div>
+<div class="health-card"><div class="health-title">Active workflows</div>
+<div class="health-row"><span class="health-name">Discovery - enrich - score</span><span class="hs"><span class="hd"></span>Running</span></div>
+<div class="health-row"><span class="health-name">Outreach sequence D1 D4 D9</span><span class="hs"><span class="hd"></span>Running</span></div>
+<div class="health-row"><span class="health-name">Reply detection</span><span class="hs dim"><span class="hd"></span>In development</span></div>
+<div class="health-row"><span class="health-name">Booking webhook receiver</span><span class="hs dim"><span class="hd"></span>In development</span></div>
+</div>
+<div class="health-card"><div class="health-title">Data infrastructure</div>
+<div class="health-row"><span class="health-name">Supabase</span><span class="hs"><span class="hd"></span>Connected</span></div>
+<div class="health-row"><span class="health-name">Brevo email delivery</span><span class="hs"><span class="hd"></span>Connected</span></div>
+<div class="health-row"><span class="health-name">n8n orchestration</span><span class="hs"><span class="hd"></span>Running</span></div>
+<div class="health-row"><span class="health-name">Domain authentication</span><span class="hs dim"><span class="hd"></span>Pending DNS</span></div>
+<div class="health-row"><span class="health-name">GitHub</span><span class="hs"><span class="hd"></span>Connected</span></div>
+</div>
+<div class="health-card"><div class="health-title">Module status</div>
+<div class="health-row"><span class="health-name">Fleet discovery</span><span class="hs"><span class="hd"></span>Active</span></div>
+<div class="health-row"><span class="health-name">AI enrichment + scoring</span><span class="hs"><span class="hd"></span>Active</span></div>
+<div class="health-row"><span class="health-name">Outreach engine</span><span class="hs"><span class="hd"></span>Active</span></div>
+<div class="health-row"><span class="health-name">Email enrichment source</span><span class="hs dim"><span class="hd"></span>In development</span></div>
+<div class="health-row"><span class="health-name">WhatsApp outreach</span><span class="hs dim"><span class="hd"></span>In development</span></div>
+<div class="health-row"><span class="health-name">Voice AI SDR agent</span><span class="hs dim"><span class="hd"></span>In development</span></div>
+</div>
+</div>
+<div class="card" style="margin:0 0 12px">
+<div class="card-header"><div class="card-title">Engine configuration</div></div>
+<div class="config-block">
+<div class="config-row"><div class="config-cell k">Target market</div><div class="config-cell v">Mid-market commercial fleets</div><div class="config-cell k">Fleet size range</div><div class="config-cell v">10-100 vehicles</div></div>
+<div class="config-row"><div class="config-cell k">Active regions</div><div class="config-cell v">Gauteng · Durban · Mpumalanga</div><div class="config-cell k">Discovery interval</div><div class="config-cell v">Every 5 minutes</div></div>
+<div class="config-row"><div class="config-cell k">Outreach sequence</div><div class="config-cell v">Day 1 · Day 4 · Day 9</div><div class="config-cell k">Execution mode</div><div class="config-cell v">Autonomous</div></div>
+</div>
+</div>
+</div>
 
-  </div>
+</div>
 </div>
 
 <script>
-const SB_URL = 'https://kjbqqphfuzniblbptbak.supabase.co';
-const SB_KEY = 'sb_publishable_T0P9Y9rK86R0swdEtUW7XA_pK8gvSY9';
-const H = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+const SB='https://kjbqqphfuzniblbptbak.supabase.co';
+const SK='sb_publishable_T0P9Y9rK86R0swdEtUW7XA_pK8gvSY9';
+const H={'apikey':SK,'Authorization':'Bearer '+SK};
+let leads=[];
 
-let allLeads = [];
+async function sb(p){const r=await fetch(SB+'/rest/v1/'+p,{headers:H});if(!r.ok)throw Error(r.status);return r.json();}
 
-async function sb(path) {
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: H });
-  if (!r.ok) throw new Error(r.status);
-  return r.json();
+const navMap={overview:0,targets:1,meetings:2,activity:3,health:4};
+function navByIndex(i){return document.querySelectorAll('.nav-item')[i];}
+
+function showPage(id,el){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+document.getElementById('page-'+id).classList.add('active');
+(el||navByIndex(navMap[id])).classList.add('active');
+const t={overview:'Overview',targets:'Fleet targets',meetings:'Account briefings',activity:'Acquisition activity',health:'System health'};
+document.getElementById('pt').textContent=t[id]||id;
+if(id==='targets')renderTable(leads);
+if(id==='meetings')loadMeetings();
+if(id==='activity')loadActivity();
 }
 
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
-  const t = { overview:'Overview', targets:'Fleet targets', meetings:'Priority account briefings', activity:'Acquisition activity', infra:'System health' };
-  document.getElementById('page-title').textContent = t[id] || id;
-  if (id === 'targets') renderTable(allLeads);
-  if (id === 'meetings') loadMeetings();
-  if (id === 'activity') loadActivity();
+// clickable shortcuts -> jump to filtered table
+function goTargets(filters){
+showPage('targets',navByIndex(1));
+if(filters){
+if(filters.region)document.getElementById('fr').value=filters.region;
+if(filters.stage)document.getElementById('fs').value=filters.stage;
+filterTable();
+}
+}
+function jumpSearch(){
+const v=document.getElementById('topSearch').value;
+showPage('targets',navByIndex(1));
+document.getElementById('si').value=v;
+filterTable();
 }
 
-async function loadOverview() {
-  try {
-    const [leads, meetings] = await Promise.all([
-      sb('leads?select=id,company_name,industry,region,score,stage,last_activity,decision_maker,fleet_size_min,fleet_size_max&order=created_at.desc&limit=500'),
-      sb('meetings?select=*&order=scheduled_at.asc&limit=50')
-    ]);
-    allLeads = leads;
-    renderRegions(leads);
-    renderMetrics(leads, meetings);
-    renderPipeline(leads);
-    renderPriority(leads);
-    renderActivityOverview(leads);
-    document.getElementById('nav-badge-count').textContent = leads.length;
-    document.getElementById('nav-badge-meetings').textContent = meetings.length || 0;
-  } catch(e) { console.error('Overview load error:', e); }
+async function loadOverview(){
+try{
+const[ls,ms]=await Promise.all([
+sb('leads?select=id,company_name,industry,region,score,stage,last_activity,decision_maker,fleet_size_min,fleet_size_max&order=created_at.desc&limit=500'),
+sb('meetings?select=*&order=scheduled_at.asc&limit=50')
+]);
+leads=ls;
+const total=ls.length*28;
+const hp=ls.filter(l=>(l.score||0)>=70).length;
+const active=ls.filter(l=>l.stage==='Active'||l.stage==='Scheduled').length;
+const today=new Date().toDateString();
+const tn=ls.filter(l=>new Date(l.last_activity).toDateString()===today).length;
+document.getElementById('hn').textContent=total.toLocaleString();
+document.getElementById('hsub').textContent='Across '+ls.length+' active fleet opportunities · '+tn+' identified today';
+document.getElementById('ha').textContent=ls.length;
+document.getElementById('hp').textContent=hp;
+document.getElementById('hsi').textContent=active;
+document.getElementById('nbc').textContent=ls.length;
+document.getElementById('nbm').textContent=ms.length||0;
+renderRegions(ls);renderPipeline(ls);renderPriority(ls);renderAct(ls);
+}catch(e){console.error(e);}
 }
 
-function renderRegions(leads) {
-  const rc = {Gauteng:0, Durban:0, Mpumalanga:0};
-  const hp = {Gauteng:0, Durban:0, Mpumalanga:0};
-  const sc = {Gauteng:0, Durban:0, Mpumalanga:0};
-  leads.forEach(l => {
-    const r = l.region;
-    if (rc[r] !== undefined) {
-      rc[r]++;
-      if ((l.score||0) >= 70) hp[r]++;
-      if (l.stage === 'Scheduled') sc[r]++;
-    }
-  });
-  const total = Object.values(rc).reduce((a,b)=>a+b,0) || 1;
-  const cols = {Gauteng:'fill-blue', Durban:'fill-purple', Mpumalanga:'fill-green'};
-  document.getElementById('region-grid').innerHTML = Object.entries(rc).map(([r,n]) => `
-    <div class="region-card">
-      <div class="region-label">${r}</div>
-      <div class="region-count">${n}</div>
-      <div class="region-vehicles">~${(n*28).toLocaleString()} target vehicles</div>
-      <div class="region-bar"><div class="region-fill ${cols[r]}" style="width:${Math.round(n/total*100)}%"></div></div>
-      <div class="region-stats">
-        <span class="region-stat">High priority <span>${hp[r]}</span></span>
-        <span class="region-stat">Scheduled <span>${sc[r]}</span></span>
-      </div>
-    </div>`).join('');
+function renderRegions(ls){
+const rc={Gauteng:0,Durban:0,Mpumalanga:0},hp={Gauteng:0,Durban:0,Mpumalanga:0},sc={Gauteng:0,Durban:0,Mpumalanga:0};
+ls.forEach(l=>{const r=l.region;if(rc[r]!==undefined){rc[r]++;if((l.score||0)>=70)hp[r]++;if(l.stage==='Scheduled')sc[r]++;}});
+const tot=Object.values(rc).reduce((a,b)=>a+b,0)||1;
+document.getElementById('rg').innerHTML=Object.entries(rc).map(([r,n])=>`
+<div class="region-card" onclick="goTargets({region:'${r}'})">
+<div class="region-label">${r}</div>
+<div class="region-count">${n}</div>
+<div class="region-vehicles">~${(n*28).toLocaleString()} target vehicles</div>
+<div class="region-bar"><div class="region-fill" style="width:${Math.round(n/tot*100)}%"></div></div>
+<div class="region-stats"><span class="region-stat">High priority <span>${hp[r]}</span></span><span class="region-stat">Scheduled <span>${sc[r]}</span></span></div>
+</div>`).join('');
+
+const active=ls.filter(l=>l.stage==='Active'||l.stage==='Scheduled').length;
+const hpAll=ls.filter(l=>(l.score||0)>=70).length;
+const today=new Date().toDateString();
+const tn=ls.filter(l=>new Date(l.last_activity).toDateString()===today).length;
+document.getElementById('mg-overview')&&0;
+renderMetrics(ls.length,hpAll,active,tn);
 }
 
-function renderMetrics(leads, meetings) {
-  const today = new Date().toDateString();
-  const todayN = leads.filter(l => new Date(l.last_activity).toDateString() === today).length;
-  const hp = leads.filter(l => (l.score||0) >= 70).length;
-  const active = leads.filter(l => l.stage === 'Active' || l.stage === 'Scheduled').length;
-  document.getElementById('metrics-grid').innerHTML = `
-    <div class="metric-card"><div class="metric-label">Active Fleet Opportunities</div><div class="metric-value">${leads.length}</div><div class="metric-sub up">↑ ${todayN} identified today</div></div>
-    <div class="metric-card"><div class="metric-label">Estimated Vehicles in Pipeline</div><div class="metric-value">${(leads.length*28).toLocaleString()}</div><div class="metric-sub">Vehicles across active targets</div></div>
-    <div class="metric-card"><div class="metric-label">High Priority Accounts</div><div class="metric-value accent">${hp}</div><div class="metric-sub">Score ≥ 70 · not yet scheduled</div></div>
-    <div class="metric-card"><div class="metric-label">Active Decision-Maker Signals</div><div class="metric-value green">${active}</div><div class="metric-sub">In outreach or scheduled</div></div>`;
+function renderMetrics(total,hp,active,tn){
+// metrics row injected below hero is part of overview - build dynamically
+let mEl=document.getElementById('metrics-row');
+if(!mEl){
+mEl=document.createElement('div');
+mEl.className='metrics-grid';
+mEl.id='metrics-row';
+const hero=document.querySelector('#page-overview .hero');
+hero.insertAdjacentElement('afterend',mEl);
+}
+mEl.innerHTML=`
+<div class="metric-card" onclick="goTargets()"><div class="metric-label">Active Fleet Opportunities</div><div class="metric-value">${total}</div><div class="metric-sub">↑ ${tn} identified today</div></div>
+<div class="metric-card" onclick="goTargets()"><div class="metric-label">Estimated Vehicles in Pipeline</div><div class="metric-value">${(total*28).toLocaleString()}</div><div class="metric-sub">Across active targets</div></div>
+<div class="metric-card" onclick="goTargets({stage:''})"><div class="metric-label">High Priority Accounts</div><div class="metric-value">${hp}</div><div class="metric-sub">Score ≥ 70 · not yet scheduled</div></div>
+<div class="metric-card" onclick="goTargets({stage:'Active'})"><div class="metric-label">Active Decision-Maker Signals</div><div class="metric-value">${active}</div><div class="metric-sub">In outreach or scheduled</div></div>`;
 }
 
-function renderPipeline(leads) {
-  const stages = ['Identified','Enriched','Qualified','Active','Scheduled'];
-  const colors = ['#6b7280','#1d4ed8','#7c3aed','#d97706','#16a34a'];
-  const counts = {};
-  stages.forEach(s => counts[s] = 0);
-  leads.forEach(l => { if (counts[l.stage] !== undefined) counts[l.stage]++; });
-  const max = Math.max(...Object.values(counts)) || 1;
-  document.getElementById('pipeline-total').textContent = `${leads.length} targets`;
-  document.getElementById('pipeline-stages').innerHTML = stages.map((s,i) => `
-    <div class="stage">
-      <div class="stage-label">${s.toUpperCase()}</div>
-      <div class="stage-count">${counts[s]}</div>
-      <div style="height:3px;border-radius:2px;background:${colors[i]}22"><div style="height:3px;border-radius:2px;background:${colors[i]};width:${Math.round(counts[s]/max*100)}%"></div></div>
-    </div>`).join('');
+function renderPipeline(ls){
+const stages=['Identified','Enriched','Qualified','Active','Scheduled'];
+const counts={};stages.forEach(s=>counts[s]=0);
+ls.forEach(l=>{if(counts[l.stage]!==undefined)counts[l.stage]++;});
+const max=Math.max(...Object.values(counts))||1;
+document.getElementById('ptot').textContent=ls.length+' total';
+document.getElementById('ps').innerHTML=stages.map(s=>`
+<div class="stage" onclick="goTargets({stage:'${s}'})">
+<div class="stage-label">${s.toUpperCase()}</div>
+<div class="stage-count">${counts[s]}</div>
+<div class="stage-bar"><div style="width:${Math.round(counts[s]/max*100)}%"></div></div>
+</div>`).join('');
 }
 
-function renderPriority(leads) {
-  const top = [...leads].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,8);
-  if (!top.length) { document.getElementById('priority-list').innerHTML = '<div class="empty">No leads yet</div>'; return; }
-  document.getElementById('priority-list').innerHTML = top.map((l,i) => `
-    <div class="priority-item">
-      <div class="priority-rank">${i+1}</div>
-      <div class="priority-info">
-        <div class="priority-name">${l.company_name}</div>
-        <div class="priority-meta">${l.industry||'Transport'} · ${l.region||'—'}</div>
-      </div>
-      <div class="priority-score">${l.score||55}</div>
-    </div>`).join('');
+function renderPriority(ls){
+const top=[...ls].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,8);
+if(!top.length){document.getElementById('pl').innerHTML='<div class="empty">No targets yet</div>';return;}
+document.getElementById('pl').innerHTML=top.map((l,i)=>`
+<div class="priority-item" onclick="goTargets()">
+<div class="priority-rank">${i+1}</div>
+<div class="priority-info"><div class="priority-name">${l.company_name}</div><div class="priority-meta">${l.industry||'Transport'} · ${l.region||'—'}</div></div>
+<div class="priority-score">${l.score||55}</div>
+</div>`).join('');
 }
 
-function renderActivityOverview(leads) {
-  const recent = [...leads].sort((a,b)=>new Date(b.last_activity)-new Date(a.last_activity)).slice(0,8);
-  const now = new Date();
-  document.getElementById('activity-time').textContent = now.toTimeString().slice(0,5);
-  const types = [{l:'Discovered',d:'dot-blue'},{l:'Outreach delivered',d:'dot-amber'},{l:'Enriched and scored',d:'dot-purple'},{l:'Opened',d:'dot-green'}];
-  document.getElementById('activity-log-overview').innerHTML = recent.map((l,i) => {
-    const t = types[i%4];
-    const mins = Math.round((now - new Date(l.last_activity))/60000);
-    const ts = mins < 1 ? 'now' : mins < 60 ? `${mins}m ago` : `${Math.round(mins/60)}h ago`;
-    return `<div class="activity-item"><div class="activity-dot ${t.d}"></div><div class="activity-text">${t.l} — <strong>${l.company_name}</strong></div><div class="activity-time">${ts}</div></div>`;
-  }).join('');
+function renderAct(ls){
+const recent=[...ls].sort((a,b)=>new Date(b.last_activity)-new Date(a.last_activity)).slice(0,8);
+const now=new Date();
+document.getElementById('at').textContent=now.toTimeString().slice(0,5);
+const types=[{l:'Target identified',d:''},{l:'Outreach delivered',d:''},{l:'Signal detected',d:''},{l:'Account enriched',d:'dim'}];
+document.getElementById('alo').innerHTML=recent.map((l,i)=>{
+const t=types[i%4];
+const mins=Math.round((now-new Date(l.last_activity))/60000);
+const ts=mins<1?'now':mins<60?mins+'m ago':Math.round(mins/60)+'h ago';
+return'<div class="activity-item"><div class="activity-dot '+t.d+'"></div><div class="activity-text">'+t.l+' — <strong>'+l.company_name+'</strong></div><div class="activity-time">'+ts+'</div></div>';
+}).join('');
 }
 
-function renderTable(leads) {
-  const tbody = document.getElementById('leads-tbody');
-  if (!leads.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty">No fleet targets found</div></td></tr>'; return; }
-  const bc = {Identified:'badge-identified',Enriched:'badge-enriched',Qualified:'badge-qualified',Active:'badge-active',Scheduled:'badge-scheduled'};
-  tbody.innerHTML = leads.map(l => {
-    const fleet = (l.fleet_size_min && l.fleet_size_max) ? `${l.fleet_size_min}–${l.fleet_size_max}` : '?–?';
-    const date = l.last_activity ? new Date(l.last_activity).toLocaleDateString('en-ZA',{day:'2-digit',month:'short'}) : '—';
-    return `<tr>
-      <td class="td-company">${l.company_name||'—'}</td>
-      <td>${l.decision_maker||'—'}</td>
-      <td>${l.industry||'Transport'}</td>
-      <td>${l.region||'—'}</td>
-      <td>${fleet}</td>
-      <td>${l.score||55}</td>
-      <td><span class="stage-badge ${bc[l.stage]||'badge-identified'}">${l.stage||'Identified'}</span></td>
-      <td>${date}</td>
-    </tr>`;
-  }).join('');
+function renderTable(ls){
+const tb=document.getElementById('tb');
+if(!ls.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">No fleet targets found</div></td></tr>';return;}
+tb.innerHTML=ls.map(l=>{
+const fleet=(l.fleet_size_min&&l.fleet_size_max)?l.fleet_size_min+'-'+l.fleet_size_max:'?-?';
+const date=l.last_activity?new Date(l.last_activity).toLocaleDateString('en-ZA',{day:'2-digit',month:'short'}):'—';
+const solid=(l.stage==='Scheduled'||l.stage==='Active')?' solid':'';
+return'<tr><td class="tdc">'+(l.company_name||'—')+'</td><td>'+(l.decision_maker||'—')+'</td><td>'+(l.industry||'Transport')+'</td><td>'+(l.region||'—')+'</td><td>'+fleet+'</td><td>'+(l.score||55)+'</td><td><span class="badge'+solid+'">'+(l.stage||'Identified')+'</span></td><td>'+date+'</td></tr>';
+}).join('');
 }
 
-function filterTable() {
-  const q = document.getElementById('search-input').value.toLowerCase();
-  const stage = document.getElementById('filter-stage').value;
-  const region = document.getElementById('filter-region').value;
-  const sector = document.getElementById('filter-sector').value;
-  const filtered = allLeads.filter(l => {
-    if (q && !l.company_name?.toLowerCase().includes(q)) return false;
-    if (stage && l.stage !== stage) return false;
-    if (region && l.region !== region) return false;
-    if (sector && l.industry !== sector) return false;
-    return true;
-  });
-  renderTable(filtered);
+function filterTable(){
+const q=document.getElementById('si').value.toLowerCase();
+const stage=document.getElementById('fs').value;
+const region=document.getElementById('fr').value;
+const sector=document.getElementById('fse').value;
+renderTable(leads.filter(l=>{
+if(q&&!l.company_name?.toLowerCase().includes(q))return false;
+if(stage&&l.stage!==stage)return false;
+if(region&&l.region!==region)return false;
+if(sector&&l.industry!==sector)return false;
+return true;
+}));
 }
 
-async function loadMeetings() {
-  try {
-    const m = await sb('meetings?select=*&order=scheduled_at.asc');
-    const g = document.getElementById('meetings-grid');
-    if (!m.length) { g.innerHTML = '<div class="empty" style="grid-column:1/-1">No account briefings yet. Meetings appear here once booked via Calendly.</div>'; return; }
-    g.innerHTML = m.map(x => `
-      <div class="meeting-card">
-        <div class="meeting-company">${x.company_name||'—'}</div>
-        <div class="meeting-contact">${x.contact_name||'—'} · ${x.role||'—'}</div>
-        <div class="meeting-fields">
-          <div><div class="field-label">Region</div><div class="field-value">${x.region||'—'}</div></div>
-          <div><div class="field-label">Fleet size</div><div class="field-value">${x.fleet_size||'—'}</div></div>
-          <div><div class="field-label">Sector</div><div class="field-value">${x.sector||'—'}</div></div>
-          <div><div class="field-label">Urgency</div><div class="field-value">${x.urgency||'—'}</div></div>
-          <div><div class="field-label">Scheduled</div><div class="field-value">${x.scheduled_at ? new Date(x.scheduled_at).toLocaleDateString('en-ZA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—'}</div></div>
-          <div><div class="field-label">Service interest</div><div class="field-value">${x.service_interest||'—'}</div></div>
-        </div>
-        ${x.operational_notes ? `<div class="meeting-notes">${x.operational_notes}</div>` : ''}
-      </div>`).join('');
-  } catch(e) { console.error(e); }
+async function loadMeetings(){
+try{
+const m=await sb('meetings?select=*&order=scheduled_at.asc');
+const g=document.getElementById('mg');
+if(!m.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">No account briefings yet. Accounts appear here when a prospect replies and a meeting is arranged.</div>';return;}
+g.innerHTML=m.map(x=>`
+<div class="meeting-card">
+<div class="meeting-company">${x.company_name||'—'}</div>
+<div class="meeting-contact">${x.contact_name||'—'} · ${x.role||'Decision maker'}</div>
+<div class="meeting-fields">
+<div><div class="fl">Region</div><div class="fv">${x.region||'—'}</div></div>
+<div><div class="fl">Fleet estimate</div><div class="fv">${x.fleet_size||'—'}</div></div>
+<div><div class="fl">Business type</div><div class="fv">${x.sector||'—'}</div></div>
+<div><div class="fl">Urgency signal</div><div class="fv">${x.urgency||'—'}</div></div>
+</div>
+<div class="mdiv"></div>
+<div class="msl">Recommended approach</div>
+<div class="ma">${x.operational_notes||'Lead with downtime reduction and total cost of ownership relevant to their sector.'}</div>
+<div class="mn">Next action: Personal follow-up by Mike</div>
+</div>`).join('');
+}catch(e){console.error(e);}
 }
 
-async function loadActivity() {
-  try {
-    const logs = await sb('engine_log?select=*&order=created_at.desc&limit=50');
-    const el = document.getElementById('activity-log-full');
-    if (!logs.length) { el.innerHTML = '<div class="empty">No activity logged yet</div>'; return; }
-    const dm = {discovery:'dot-blue',outreach:'dot-amber',enrichment:'dot-purple',booking:'dot-green'};
-    const now = new Date();
-    el.innerHTML = logs.map(l => {
-      const dot = dm[l.event_type]||'dot-blue';
-      const mins = Math.round((now-new Date(l.created_at))/60000);
-      const ts = mins<1?'now':mins<60?`${mins}m ago`:`${Math.round(mins/60)}h ago`;
-      return `<div class="activity-item"><div class="activity-dot ${dot}"></div><div class="activity-text">${l.message||l.event_type}${l.company_name?` — <strong>${l.company_name}</strong>`:''}</div><div class="activity-time">${ts}</div></div>`;
-    }).join('');
-  } catch(e) { console.error(e); }
+async function loadActivity(){
+try{
+const logs=await sb('engine_log?select=*&order=created_at.desc&limit=50');
+const el=document.getElementById('alf');
+if(!logs.length){el.innerHTML='<div class="empty">No activity logged yet</div>';return;}
+const now=new Date();
+el.innerHTML=logs.map(l=>{
+const mins=Math.round((now-new Date(l.created_at))/60000);
+const ts=mins<1?'now':mins<60?mins+'m ago':Math.round(mins/60)+'h ago';
+return'<div class="activity-item"><div class="activity-dot"></div><div class="activity-text">'+(l.message||l.event_type)+(l.company_name?' — <strong>'+l.company_name+'</strong>':'')+'</div><div class="activity-time">'+ts+'</div></div>';
+}).join('');
+}catch(e){console.error(e);}
 }
 
-function updateCycle() {
-  const s = 300 - (Math.floor(Date.now()/1000) % 300);
-  document.getElementById('next-cycle').textContent = `Next cycle ${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+function updateCycle(){
+const s=300-(Math.floor(Date.now()/1000)%300);
+document.getElementById('nc').textContent='Next cycle '+Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');
 }
 
-function refreshAll() {
-  loadOverview();
-  const a = document.querySelector('.page.active');
-  if (a?.id==='page-activity') loadActivity();
-  if (a?.id==='page-meetings') loadMeetings();
-  if (a?.id==='page-targets') renderTable(allLeads);
+function runCycle(){
+const b=document.getElementById('cycleBtn');
+b.classList.add('spinning');
+loadOverview().finally(()=>setTimeout(()=>b.classList.remove('spinning'),700));
+const a=document.querySelector('.page.active');
+if(a?.id==='page-activity')loadActivity();
+if(a?.id==='page-meetings')loadMeetings();
 }
 
 loadOverview();
-setInterval(updateCycle, 1000);
-setInterval(loadOverview, 30000);
+setInterval(updateCycle,1000);
+setInterval(loadOverview,30000);
 </script>
 </body>
 </html>
